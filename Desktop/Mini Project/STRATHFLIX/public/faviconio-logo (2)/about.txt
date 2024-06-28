@@ -1,0 +1,6 @@
+This logo was generated using the following font:
+
+- Font Title: Numans
+- Font Author: Copyright (c) 2011 by Jovanny Lemonad. All rights reserved.
+- Font Source: https://fonts.gstatic.com/s/numans/v15/SlGRmQmGupYAfH8IYRggiHVqaQ.ttf
+- Font License: SIL Open Font License, 1.1 (http://scripts.sil.org/OFL))
