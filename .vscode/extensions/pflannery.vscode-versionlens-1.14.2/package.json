@@ -1,0 +1,764 @@
+{
+	"name": "vscode-versionlens",
+	"preview": false,
+	"private": true,
+	"main": "./dist/extension.bundle.js",
+	"description": "Shows the latest version for each package using code lens",
+	"repository": {
+		"type": "git",
+		"url": "https://gitlab.com/versionlens/vscode-versionlens.git"
+	},
+	"author": "Peter Flannery",
+	"license": "ISC",
+	"version": "1.14.2",
+	"publisher": "pflannery",
+	"displayName": "Version Lens",
+	"icon": "images/logo.png",
+	"engines": {
+		"vscode": ">=1.90.0"
+	},
+	"keywords": [
+		"versions",
+		"packages",
+		"dependencies",
+		"references",
+		"c#,composer,csharp,dart,dotnet,dub,f#,fsharp,go,java,jspm,maven,npm,nuget,pnpm,pub,python"
+	],
+	"categories": [
+		"Programming Languages",
+		"Other"
+	],
+	"activationEvents": [
+		"onLanguage:jsonc",
+		"onLanguage:json",
+		"onLanguage:xml",
+		"onLanguage:toml",
+		"onLanguage:yaml",
+		"onLanguage:go.mod"
+	],
+	"scripts": {
+		"fresh": "task",
+		"clean": "task",
+		"bundle": "task",
+		"bundle:dev": "task",
+		"bundle:test": "task",
+		"test": "task",
+		"test:insiders": "task",
+		"trace": "task"
+	},
+	"devDependencies": {
+		"@types/eslint": "8.56.10",
+		"@types/micromatch": "4.0.7",
+		"@types/mocha": "10.0.6",
+		"@types/node": "20.14.2",
+		"@types/npm-package-arg": "6.1.4",
+		"@types/sax": "1.2.7",
+		"@types/source-map-support": "0.5.10",
+		"@types/vscode": "1.90.0",
+		"@vscode/test-electron": "2.4.0",
+		"esbuild": "0.21.5",
+		"js-build-tasks": "1.0.0-beta.10",
+		"mocha": "10.4.0",
+		"mocha-ui-esm": "1.0.0-beta.14",
+		"rimraf": "5.0.7",
+		"source-map-support": "0.5.21",
+		"ts-mockito": "2.6.1",
+		"typescript": "5.4.5"
+	},
+	"dependencies": {
+		"@esm-test/guards": "1.0.0-beta.9",
+		"@npmcli/config": "8.3.3",
+		"@npmcli/promise-spawn": "7.0.2",
+		"awilix": "10.0.2",
+		"dotenv": "16.4.5",
+		"jsonc-parser": "3.2.1",
+		"micromatch": "4.0.7",
+		"npm-package-arg": "11.0.2",
+		"npm-registry-fetch": "17.0.1",
+		"request-light": "0.7.0",
+		"sax": "1.4.1",
+		"semver": "7.6.2",
+		"toml-eslint-parser": "0.9.3",
+		"winston": "3.13.0",
+		"yaml": "2.4.5"
+	},
+	"overrides": {
+		"@npmcli/agent": "2.0.0"
+	},
+	"contributes": {
+		"commands": [
+			{
+				"command": "versionlens.icons.showError",
+				"title": "An error has occurred. Click to see the log for details.",
+				"category": "VersionLens",
+				"icon": "images/icons/toggle-death.svg"
+			},
+			{
+				"command": "versionlens.icons.showVersionLenses",
+				"title": "Show dependency versions",
+				"category": "VersionLens",
+				"icon": {
+					"dark": "images/icons/toggle-inactive.svg",
+					"light": "images/icons/toggle-inactive-light.svg"
+				}
+			},
+			{
+				"command": "versionlens.icons.hideVersionLenses",
+				"title": "Hide dependency versions",
+				"category": "VersionLens",
+				"icon": "images/icons/toggle-active.svg"
+			},
+			{
+				"command": "versionlens.icons.showPrereleaseVersions",
+				"title": "Show tagged dependency versions",
+				"category": "VersionLens",
+				"icon": {
+					"dark": "images/icons/tag-inactive.svg",
+					"light": "images/icons/tag-inactive-light.svg"
+				}
+			},
+			{
+				"command": "versionlens.icons.hidePrereleaseVersions",
+				"title": "Hide tagged dependency versions",
+				"category": "VersionLens",
+				"icon": "images/icons/tag-active.svg"
+			},
+			{
+				"command": "versionlens.icons.showingProgress",
+				"enablement": "false",
+				"title": "Analyzing dependencies...",
+				"category": "VersionLens",
+				"icon": "images/icons/toggle-active-progress.svg"
+			},
+			{
+				"command": "versionlens.suggestions.clearCache",
+				"title": "Clear cache",
+				"category": "VersionLens"
+			}
+		],
+		"menus": {
+			"commandPalette": [
+				{
+					"command": "versionlens.icons.showPrereleaseVersions",
+					"when": "versionlens.show && versionlens.providerActive"
+				},
+				{
+					"command": "versionlens.icons.hidePrereleaseVersions",
+					"when": "versionlens.show && versionlens.providerActive"
+				},
+				{
+					"command": "versionlens.icons.showVersionLenses",
+					"when": "versionlens.show && versionlens.providerActive"
+				},
+				{
+					"command": "versionlens.icons.hideVersionLenses",
+					"when": "versionlens.show && versionlens.providerActive"
+				},
+				{
+					"command": "versionlens.icons.showError",
+					"when": "false"
+				}
+			],
+			"editor/title": [
+				{
+					"command": "versionlens.icons.showError",
+					"when": "versionlens.providerError && versionlens.providerActive && textCompareEditorVisible == false",
+					"group": "navigation@1"
+				},
+				{
+					"command": "versionlens.icons.showVersionLenses",
+					"when": "versionlens.show == false && versionlens.providerActive && versionlens.providerBusy == false && versionlens.providerError == false && textCompareEditorVisible == false",
+					"group": "navigation@1"
+				},
+				{
+					"command": "versionlens.icons.hideVersionLenses",
+					"when": "versionlens.show && versionlens.providerActive && versionlens.providerBusy == false && versionlens.providerError == false  && textCompareEditorVisible == false",
+					"group": "navigation@1"
+				},
+				{
+					"command": "versionlens.icons.showingProgress",
+					"when": "versionlens.providerBusy && versionlens.providerActive && versionlens.providerError == false && textCompareEditorVisible == false",
+					"group": "navigation@1"
+				},
+				{
+					"command": "versionlens.icons.showPrereleaseVersions",
+					"when": "versionlens.showPrereleases == false && versionlens.show && versionlens.providerActive && textCompareEditorVisible == false",
+					"group": "navigation@2"
+				},
+				{
+					"command": "versionlens.icons.hidePrereleaseVersions",
+					"when": "versionlens.showPrereleases && versionlens.show && versionlens.providerActive && textCompareEditorVisible == false",
+					"group": "navigation@2"
+				}
+			]
+		},
+		"configuration": {
+			"title": "VersionLens",
+			"properties": {
+				"versionlens.suggestions.showOnStartup": {
+					"type": "boolean",
+					"default": false,
+					"description": "Show version suggestions by default on vscode start up."
+				},
+				"versionlens.suggestions.showPrereleasesOnStartup": {
+					"type": "boolean",
+					"default": false,
+					"description": "Show version prerelease suggestions by default on vscode start up."
+				},
+				"versionlens.suggestions.indicators": {
+					"type": "object",
+					"default": {
+						"Directory": "📁 ",
+						"Error": "🔴",
+						"Latest": "🟢",
+						"NoMatch": "⚪",
+						"Match": "🟡",
+						"Updateable": "↑ "
+					},
+					"properties": {
+						"name": {
+							"type": "string"
+						},
+						"indicator": {
+							"type": "string"
+						}
+					},
+					"description": "The indicators used when showing version suggestion statuses."
+				},
+				"versionlens.logging.level": {
+					"type": "string",
+					"default": "error",
+					"enum": [
+						"error",
+						"info",
+						"debug",
+						"silly"
+					],
+					"description": "Sets the level of logs to be written to the VersionLens output channel."
+				},
+				"versionlens.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"default": 3,
+					"description": "Specifies how long (in minutes) version suggestions will be cached. Setting the duration to 0 will disable caching."
+				},
+				"versionlens.http.strictSSL": {
+					"type": [
+						"boolean"
+					],
+					"default": true,
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned."
+				},
+				"versionlens.npm.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.npm.files": {
+					"type": "string",
+					"default": "**/package.json",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.npm.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.npm.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.npm.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"version",
+						"packageManager",
+						"dependencies",
+						"devDependencies",
+						"peerDependencies",
+						"optionalDependencies",
+						"overrides",
+						"overrides.*",
+						"jspm.dependencies",
+						"jspm.devDependencies",
+						"jspm.peerDependencies",
+						"jspm.optionalDependencies",
+						"pnpm.overrides",
+						"pnpm.overrides.*"
+					],
+					"description": "Defines which properties in package.json should be parsed by this extension"
+				},
+				"versionlens.npm.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.pub.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.pub.files": {
+					"type": "string",
+					"default": "**/pubspec.yaml",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.pub.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.pub.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.pub.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"version",
+						"dependencies",
+						"dev_dependencies"
+					],
+					"description": "Defines which properties in pubspec.yaml should be parsed by this extension"
+				},
+				"versionlens.pub.apiUrl": {
+					"type": "string",
+					"default": "https://pub.dev/api/packages",
+					"description": "Defines the pub api to use for package searching."
+				},
+				"versionlens.pub.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.dotnet.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.dotnet.files": {
+					"type": "string",
+					"default": "**/*.{csproj,fsproj,targets,props}",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.dotnet.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.dotnet.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.dotnet.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"Project.Sdk",
+						"Project.PropertyGroup.Version",
+						"Project.PropertyGroup.AssemblyVersion",
+						"Project.ItemGroup.GlobalPackageReference",
+						"Project.ItemGroup.PackageReference",
+						"Project.ItemGroup.PackageVersion",
+						"Project.ItemGroup.DotNetCliToolReference"
+					],
+					"description": "Defines which project properties should be parsed by this extension"
+				},
+				"versionlens.dotnet.nuget.sources": {
+					"type": "array",
+					"items": {
+						"type": [
+							"null",
+							"string"
+						]
+					},
+					"default": [],
+					"description": "Defines which nuget source to use for package searching. Has to be a v3 'service index' endpoint. e.g. https://api.nuget.org/v3/index.json. Defaults to the sources output by `dotnet nuget list source`"
+				},
+				"versionlens.dotnet.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.dub.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.dub.files": {
+					"type": "string",
+					"default": "**/{dub.json,dub.selections.json}",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.dub.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.dub.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.dub.apiUrl": {
+					"type": "string",
+					"default": "https://code.dlang.org/api/packages",
+					"description": "Defines the api to use for dub package searching."
+				},
+				"versionlens.dub.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"dependencies",
+						"versions"
+					],
+					"description": "Defines which properties in dub.json should be parsed by this extension"
+				},
+				"versionlens.dub.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.cargo.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.cargo.files": {
+					"type": "string",
+					"default": "**/Cargo.toml",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.cargo.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.cargo.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.cargo.apiUrl": {
+					"type": "string",
+					"default": "https://crates.io/api/v1/crates",
+					"description": "Defines the api to use for crate package searching."
+				},
+				"versionlens.cargo.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"package",
+						"dependencies",
+						"dependencies.*",
+						"dev-dependencies",
+						"dev-dependencies.*",
+						"build-dependencies",
+						"build-dependencies.*",
+						"workspace.dependencies",
+						"workspace.dependencies.*"
+					],
+					"description": "Defines which properties in cargo.toml should be parsed by this extension"
+				},
+				"versionlens.cargo.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.composer.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.composer.files": {
+					"type": "string",
+					"default": "**/composer.json",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.composer.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.composer.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.composer.apiUrl": {
+					"type": "string",
+					"default": "https://repo.packagist.org/p2",
+					"description": "Defines the api to use for composer package searching."
+				},
+				"versionlens.composer.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"version",
+						"require",
+						"require-dev"
+					],
+					"description": "Defines which properties in composer.json should be parsed by this extension"
+				},
+				"versionlens.composer.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.maven.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.maven.files": {
+					"type": "string",
+					"default": "**/pom.xml",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.maven.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.maven.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.maven.apiUrl": {
+					"type": "string",
+					"default": "",
+					"description": "Defines the api to use for maven package searching."
+				},
+				"versionlens.maven.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"project.version",
+						"project.dependencies.dependency",
+						"project.parent"
+					],
+					"description": "Defines which properties in pom.xml should be parsed by this extension"
+				},
+				"versionlens.maven.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.pypi.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.pypi.files": {
+					"type": "string",
+					"default": "**/{Pipfile,pyproject.toml}",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.pypi.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.pypi.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.pypi.apiUrl": {
+					"type": "string",
+					"default": "https://pypi.org/rss/project/{name}/releases.xml",
+					"description": "Defines the api to use for pypi package searching."
+				},
+				"versionlens.pypi.dependencyProperties": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 1,
+					"default": [
+						"project",
+						"packages",
+						"dev-packages",
+						"tool.poetry.dependencies",
+						"tool.poetry.group.*.dependencies"
+					],
+					"description": "Defines which properties in pyproject.toml should be parsed by this extension"
+				},
+				"versionlens.pypi.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.golang.onSaveChanges": {
+					"type": "string",
+					"default": null,
+					"description": "A task label defined in your tasks.json that will be executed when you save a package document that has dependency changes. Ensure to set your `task.options.cwd` to the predefined variable called `${fileDirname}` when running an install task"
+				},
+				"versionlens.golang.files": {
+					"type": "string",
+					"default": "**/go.mod",
+					"description": "Specifies which files to register with version lenses. You can use [micromatch](https://github.com/micromatch/micromatch) expressions to match file names. You will need to restart vscode when changing this setting."
+				},
+				"versionlens.golang.caching.duration": {
+					"type": [
+						"null",
+						"number"
+					],
+					"description": "Specifies how long (in minutes) version suggestions will be cached."
+				},
+				"versionlens.golang.http.strictSSL": {
+					"type": [
+						"null",
+						"boolean"
+					],
+					"description": "When set to 'true' the server will reject any connection which is not authorized within the list of supplied CAs. Set to false for unsigned. Overrides 'versionlens.http.strictSSL'"
+				},
+				"versionlens.golang.apiUrl": {
+					"type": "string",
+					"default": "https://proxy.golang.org/{base-module}/@v/list",
+					"description": "Defines the api to use for go package searching."
+				},
+				"versionlens.golang.prereleaseTagFilter": {
+					"type": "array",
+					"items": {
+						"type": "string"
+					},
+					"uniqueItems": true,
+					"minItems": 0,
+					"default": [],
+					"description": "Defines a list of prerelease tags you only want to see. i.e. ['alpha', 'beta']. If you don't specify any prerelease tags then all the prerelease tags newer the the latest version are shown when the 'show prereleases' icon is activated."
+				},
+				"versionlens.github.accessToken": {
+					"type": [
+						"null",
+						"string"
+					],
+					"default": "",
+					"description": "Used for making basic read only github api requests. To generate a token see https://help.github.com/articles/creating-an-access-token-for-command-line-use/#creating-a-token. When no token is provided then access to the github api is rate limited to 60 requests every 10 minutes or so."
+				}
+			}
+		}
+	},
+	"__metadata": {
+		"id": "07fc4a0a-11fc-4121-ba9a-f0d534c729d8",
+		"publisherId": "7955ff1e-ae4f-4c47-a690-71f4d32e829c",
+		"publisherDisplayName": "pflannery",
+		"targetPlatform": "undefined",
+		"isApplicationScoped": false,
+		"isPreReleaseVersion": false,
+		"hasPreReleaseVersion": false,
+		"installedTimestamp": 1718209471636,
+		"pinned": false,
+		"preRelease": false,
+		"source": "gallery"
+	}
+}

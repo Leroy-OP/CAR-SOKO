@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <style>
+    html {
+      border: none;
+      padding: none;
+      margin: none;
+    }
+
+    .link-icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background-repeat: no-repeat;
+      background-position: 50%;
+      background-size: 16px;
+      border: none;
+      padding: none;
+      margin: none;
+    }
+
+    .icon {
+      background: black;
+      display: inline-block;
+      width: 100%;
+      height: 100%;
+      border: none;
+      padding: none;
+      margin: none;
+    }
+
+    .toggle-active {
+      -webkit-mask: url("toggle-active.svg") 50% 50% no-repeat;
+    }
+
+    .toggle-inactive {
+      -webkit-mask: url("toggle-inactive.svg") 50% 50% no-repeat;
+    }
+
+    .tag-active {
+      -webkit-mask: url("tag-active.svg") 50% 50% no-repeat;
+    }
+
+    .tag-inactive {
+      -webkit-mask: url("tag-inactive.svg") 50% 50% no-repeat;
+    }
+
+    .toggle-progress {
+      -webkit-mask: url("toggle-active-progress.svg") 50% 50% no-repeat;
+    }
+
+    .toggle-death {
+      -webkit-mask: url("toggle-death.svg") 50% 50% no-repeat;
+    }
+  </style>
+</head>
+
+<body>
+
+  <a class="link-icon">
+    <span class="icon toggle-inactive">&nbsp;</span>
+  </a>
+
+  <a class="link-icon">
+    <span class="icon toggle-active">&nbsp;</span>
+  </a>
+
+  <a class="link-icon">
+    <span class="icon toggle-progress">&nbsp;</span>
+  </a>
+
+  <a class="link-icon">
+    <span class="icon tag-inactive">&nbsp;</span>
+  </a>
+
+  <a class="link-icon">
+    <span class="icon tag-active">&nbsp;</span>
+  </a>
+
+  <a class="link-icon">
+    <span class="icon toggle-death">&nbsp;</span>
+  </a>
+
+</body>
+
+</html>
